@@ -1,3 +1,3 @@
-#!/usr/bin/env lips
+; #!/usr/bin/env csi -s
 
 (display "Hello World!\n")

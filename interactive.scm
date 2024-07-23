@@ -1,4 +1,4 @@
-#!/usr/bin/env lips
+; #!/usr/bin/env csi -s
 
 ; Following:
 ; https://lips.js.org/docs/scheme-intro/what-is-lisp
@@ -24,8 +24,9 @@
 
 (string->list "hello")
 
-; (string->vector "hello")  this apparently requires a library in (C-based) 'chicken':
-                          ; https://wiki.call-cc.org/eggref/5/vector-lib
+(display (vector 1 2 3)) ; is supported
+
+;; (string->vector "hello") ; not supported with 'chicken' for some reason
 
 (string->symbol "hello")
 
@@ -41,7 +42,7 @@ multline comment. yay
 
 (cons 1 2) ; the pair 1 2
 
-;; (1 . 2) seems like this syntax is not supported in chicken lisp
+'(1 . 2)
 
 ;; evaluated to the same thing:
 (cons 1 (cons 2 (cons 3 '())))
@@ -51,8 +52,8 @@ multline comment. yay
 ;; improper list -- final element doesn't have |tail| is not '()
 (cons 1 (cons 2 3))
 (cons (list 1 2))
-;; (list 1 2 . 3) ; not supported in chicken (because it's compiled?)
-;; '(1 2 . 3)     ; --- || ---
+;; (list 1 2 . 3) ;; not supported?
+'(1 2 . 3)
 
 ;; define convienience macros
 (define |head| car)    ; "head" is the first elm of the list
@@ -70,8 +71,8 @@ multline comment. yay
 
 (cons (list 1 2) 3)
 
-;; #(1 2 3 4) // not supported in chicken -- unless you have (https://wiki.call-cc.org/eggref/5/vector-lib)
-;; (vector 1 2 3)
+'#(1 2 3 4)
+(vector 1 2 3 4)
 
 ;; see:
 ;; https://stackoverflow.com/questions/41386527/scheme-unbound-variable-unquote
@@ -126,3 +127,101 @@ multline comment. yay
                   ; else:
                   (+ (car list) (sum (cdr list)))))))
     (sum '(1 2 3 4)))
+
+; define procedures:
+(define square (lambda (x) (* x x)))
+(square 2)
+
+(define (cube x)
+        (* x x))
+(define (sum a b)
+        (+ a b))
+(sum 10 20)
+
+(define (quadruple x)
+  (define (square x)
+    (* x x))
+  (* (square x) (square x)))  
+ 
+(quadruple 10)
+
+((lambda (x) (* x x)) 10)
+
+(define sum (lambda args (apply + args)))
+(define mul (lambda args (apply * args)))
+                          
+(sum 1 2 3 4)
+(mul 2 2 2 2)
+
+(define expression (lambda (first . rest) (/ first (apply + rest))))
+(expression 1 2 3 4)
+
+(define (rational first . rest)
+  (let ((second (if (null? rest) 1 (car rest))))
+    (/ first second)))
+
+(rational 5)
+(rational 5 10)
+
+(define (factorial n)
+    (if (<= n 1)
+        1
+        (* n (factorial (- n 1)))))
+
+(factorial 10)
+
+; note this uses `let` - `rec`, allowing a variable to reference itself
+(letrec ((sum (lambda (x)
+                (if (zero? x)
+                  0
+                  (+ x (sum (- x 1)))))))
+  (sum 10))
+     
+; https://stackoverflow.com/questions/310974/what-is-tail-call-optimization
+
+(define (fac x)
+   (if (= x 0) 1
+    (* x (fac (- x 1)))))
+(fac 5)
+
+(define (fact x)
+  (define (fact-tail x accum)
+    (if (= x 0) accum
+      (fact-tail (- x 1) (* x accum))))
+  (fact-tail x 1))
+(fact 5)
+
+; some thing to do with do-syntax... don't understand.
+
+; association list, alist:
+(list (cons "x" 10) (cons "y" 20) (cons "z" 30))
+
+; taken example:
+(define countup (let ((count 0))
+                  (lambda ()
+                    (set! count (+ count 1))
+                    count)))
+(countup)
+
+;taken example:
+(define (make-person name age)
+  (lambda (action . rest)
+    (case action
+      ((name) name)
+      ((age) age)
+      ((set-name) (set! name (car rest)))
+      ((set-age) (set! age (car rest))))))
+
+(let ((jack (make-person "Jack" 22)))
+  (display (jack 'name))
+  (newline)
+  (jack 'set-name "Mark")
+  (jack 'set-age 24)
+  (display (jack 'name))
+  (display " is ")
+  (display (jack 'age))
+  (display " years old"))
+
+; some interesting some with closures i am gonna ignore.
+
+; macros... ok i will stop here...
